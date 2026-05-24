@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Goal overlay</title>
+  <link rel="icon" href="/assets/icon.png" type="image/png" />
+  <meta name="mrt-ui-token" content="{{ ui_token|default('') }}" />
+  <link rel="stylesheet" href="/assets/progress_effects.css" />
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: transparent;
+    }
+
+    .overlay-root {
+      box-sizing: border-box;
+      position: relative;
+      width: var(--overlay-w, 1920px);
+      height: var(--overlay-h, 120px);
+      padding: 0.35em 0.5em;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.15em;
+      font-family: var(--bar-font-family, system-ui, Segoe UI, sans-serif);
+      color: #fff;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+    }
+
+    .overlay-root.no-name {
+      justify-content: center;
+    }
+
+    #goal-name {
+      margin: 0;
+      font-size: var(--title-size, 1.1em);
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.15;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #goal-name[hidden] {
+      display: none;
+    }
+
+    .bar-track {
+      width: 100%;
+      height: var(--bar-height, 1.4em);
+      background: rgba(0, 0, 0, 0.45);
+      border-radius: 0.25em;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    #bar-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--bar-fill-background, #FFA8BC);
+      border-radius: 0.2em;
+      transition: width 0.35s ease;
+    }
+
+    #goal-points-text {
+      margin: 0;
+      text-align: center;
+      font-size: var(--caption-size, 0.95em);
+      font-weight: 600;
+      line-height: 1.1;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="overlay-root" class="overlay-root">
+    <h1 id="goal-name">No active goal</h1>
+    <div class="bar-track" aria-hidden="true">
+      <div id="bar-fill"></div>
+    </div>
+    <p id="goal-points-text">0 / 0 pts</p>
+  </div>
+  <script>
+    (function () {
+      const params = new URLSearchParams(location.search);
+      const clamp = (n, lo, hi, fallback) => {
+        const v = parseInt(n, 10);
+        return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : fallback;
+      };
+      const w = clamp(params.get("w") ?? params.get("width"), 100, 7680, 1920);
+      const h = clamp(params.get("h") ?? params.get("height"), 40, 2160, 120);
+      const showName = !["0", "false", "no"].includes((params.get("name") ?? "1").toLowerCase());
+      const root = document.getElementById("overlay-root");
+      const goalNameEl = document.getElementById("goal-name");
+      const barFill = document.getElementById("bar-fill");
+      const barTrack = document.querySelector(".bar-track");
+      const goalPointsTextEl = document.getElementById("goal-points-text");
+      root.style.setProperty("--overlay-w", w + "px");
+      root.style.setProperty("--overlay-h", h + "px");
+      root.style.setProperty("--title-size", Math.max(12, Math.round(h * 0.14)) + "px");
+      root.style.setProperty("--caption-size", Math.max(11, Math.round(h * 0.12)) + "px");
+      root.style.setProperty("--bar-height", Math.max(16, Math.round(h * 0.22)) + "px");
+      if (!showName) {
+        root.classList.add("no-name");
+        goalNameEl.hidden = true;
+      }
+
+      let barAppearance = {
+        fill_color: "#FFA8BC",
+        gradient_color: "#22C55E",
+        use_gradient: false,
+        font_family: "system-ui, Segoe UI, sans-serif",
+        show_decimals: false,
+      };
+      let progressEffects = { goal_complete: "confetti", points_added: "none", goal_complete_repeat: true };
+      let lastProgressSnapshot = null;
+      let goalCompleteRepeatTimer = null;
+      const POINTS_EPSILON = 0.001;
+      const GOAL_COMPLETE_REPEAT_MS = 7000;
+
+      function barFillBackground(appearance) {
+        const fill = appearance.fill_color || "#FFA8BC";
+        if (appearance.use_gradient) {
+          const end = appearance.gradient_color || "#22C55E";
+          return `linear-gradient(90deg, ${fill}, ${end})`;
+        }
+        return fill;
+      }
+
+      function applyBarAppearance(appearance) {
+        if (appearance) barAppearance = { ...barAppearance, ...appearance };
+        const bg = barFillBackground(barAppearance);
+        barFill.style.background = bg;
+        root.style.setProperty("--bar-fill-background", bg);
+        root.style.setProperty("--bar-font-family", barAppearance.font_family || "system-ui, Segoe UI, sans-serif");
+      }
+
+      function exactPointsValue(value) {
+        return Math.round((Number(value) || 0) * 100) / 100;
+      }
+
+      function formatPoints(value) {
+        const exact = exactPointsValue(value);
+        if (barAppearance.show_decimals) {
+          return exact.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        return Math.round(exact).toLocaleString();
+      }
+
+      function formatPointsExact(value) {
+        return exactPointsValue(value).toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+      }
+
+      function formatProgressPointsCaption(current, target, { hasGoal = true } = {}) {
+        const exactCurrent = exactPointsValue(current);
+        const exactTarget = exactPointsValue(target);
+        const roundedCurrent = Math.round(exactCurrent);
+        const roundedTarget = Math.round(exactTarget);
+        const targetStr = formatPoints(exactTarget);
+        if (
+          !barAppearance.show_decimals
+          && hasGoal
+          && exactTarget > 0
+          && roundedCurrent === roundedTarget
+          && exactCurrent !== exactTarget
+        ) {
+          return `${formatPoints(exactCurrent)} (${formatPointsExact(exactCurrent)}) / ${targetStr} pts`;
+        }
+        return `${formatPoints(exactCurrent)} / ${targetStr} pts`;
+      }
+
+      function normalizeProgressEffects(effects) {
+        const fx = effects || {};
+        return {
+          goal_complete: String(fx.goal_complete || "confetti"),
+          points_added: String(fx.points_added || "none"),
+          goal_complete_repeat: fx.goal_complete_repeat !== false,
+        };
+      }
+
+      function progressEffectsFromMessage(message) {
+        if (message.progress_effects && typeof message.progress_effects === "object") {
+          return message.progress_effects;
+        }
+        if (message.type === "progress_effects") {
+          return {
+            goal_complete: message.goal_complete,
+            points_added: message.points_added,
+            goal_complete_repeat: message.goal_complete_repeat,
+          };
+        }
+        return null;
+      }
+
+      function goalCompleteRepeatEnabled(effects) {
+        const fx = effects || progressEffects;
+        return fx.goal_complete_repeat !== false;
+      }
+
+      function clearGoalCompleteRepeat() {
+        if (goalCompleteRepeatTimer) {
+          clearInterval(goalCompleteRepeatTimer);
+          goalCompleteRepeatTimer = null;
+        }
+      }
+
+      function startGoalCompleteRepeat(effectId, effects) {
+        clearGoalCompleteRepeat();
+        const id = effectId || "none";
+        if (!goalCompleteRepeatEnabled(effects) || id === "none") return;
+        goalCompleteRepeatTimer = setInterval(() => {
+          const progress = lastProgress || {};
+          if (!progress.goal_id || !isGoalCompleteSnapshot(progressSnapshotFrom(progress))) {
+            clearGoalCompleteRepeat();
+            return;
+          }
+          playGoalCompleteEffect(id);
+        }, GOAL_COMPLETE_REPEAT_MS);
+      }
+
+      function syncGoalCompleteRepeat(progress, effects) {
+        const fx = normalizeProgressEffects(effects || progressEffects);
+        const snapshot = progressSnapshotFrom(progress || {});
+        if (isGoalCompleteSnapshot(snapshot) && fx.goal_complete !== "none" && goalCompleteRepeatEnabled(fx)) {
+          if (!goalCompleteRepeatTimer) {
+            startGoalCompleteRepeat(fx.goal_complete, fx);
+          }
+        } else {
+          clearGoalCompleteRepeat();
+        }
+      }
+
+      function addFxWithCleanup(element, className, durationMs) {
+        if (!element || !className) return;
+        element.classList.remove(className);
+        void element.offsetWidth;
+        element.classList.add(className);
+        const done = () => {
+          element.classList.remove(className);
+          element.removeEventListener("animationend", done);
+        };
+        element.addEventListener("animationend", done, { once: true });
+        setTimeout(done, durationMs);
+      }
+
+      function pointsCaptionEl() {
+        if (!goalPointsTextEl) return null;
+        let inner = goalPointsTextEl.querySelector(".goal-points-caption");
+        if (!inner) {
+          inner = document.createElement("span");
+          inner.className = "goal-points-caption";
+          inner.textContent = goalPointsTextEl.textContent;
+          goalPointsTextEl.textContent = "";
+          goalPointsTextEl.appendChild(inner);
+        }
+        return inner;
+      }
+
+      function spawnConfetti(host, durationMs = 2800) {
+        if (!host) return;
+        host.classList.add("fx-confetti-host");
+        const layer = document.createElement("div");
+        layer.className = "fx-confetti-layer";
+        const colors = ["#ef4444", "#3b82f6", "#eab308", "#22c55e", "#a855f7", "#ec4899", "#f97316"];
+        for (let i = 0; i < 48; i++) {
+          const piece = document.createElement("span");
+          piece.className = "fx-confetti-piece";
+          piece.style.setProperty("--fx-left", `${Math.random() * 100}%`);
+          piece.style.setProperty("--fx-delay", `${Math.random() * 0.35}s`);
+          piece.style.setProperty("--fx-drift", `${Math.random() * 70 - 35}px`);
+          piece.style.setProperty("--fx-color", colors[i % colors.length]);
+          piece.style.setProperty("--fx-rotate", `${Math.random() * 360}deg`);
+          layer.appendChild(piece);
+        }
+        host.appendChild(layer);
+        setTimeout(() => {
+          layer.remove();
+          if (!host.querySelector(".fx-confetti-layer")) {
+            host.classList.remove("fx-confetti-host");
+          }
+        }, durationMs);
+      }
+
+      function playGoalCompleteEffect(effectId) {
+        const id = effectId || "none";
+        if (id === "none") return;
+        if (id === "glow" || id === "ring_burst") {
+          addFxWithCleanup(barTrack, `fx-goal-${id}`, id === "glow" ? 2000 : 1600);
+          return;
+        }
+        if (id === "finish_shine") {
+          addFxWithCleanup(barFill, "fx-goal-finish_shine", 3400);
+          return;
+        }
+        if (id === "confetti") {
+          spawnConfetti(root, 2800);
+        }
+      }
+
+      function playPointsAddedEffect(effectId) {
+        const id = effectId || "none";
+        if (id === "none") return;
+        if (id === "bar_flash") {
+          addFxWithCleanup(barFill, "fx-points-bar_flash", 450);
+          return;
+        }
+        if (id === "number_pop") {
+          addFxWithCleanup(pointsCaptionEl(), "fx-points-number_pop", 550);
+          return;
+        }
+        if (id === "caption_glow") {
+          addFxWithCleanup(pointsCaptionEl(), "fx-points-caption_glow", 850);
+        }
+      }
+
+      function previewGoalCompleteEffect(effectId) {
+        const id = effectId || "none";
+        if (id === "none") return;
+        const savedWidth = barFill.style.width;
+        barFill.style.width = "100%";
+        playGoalCompleteEffect(id);
+        const restoreMs = id === "confetti" ? 3200 : id === "finish_shine" ? 3600 : 2200;
+        setTimeout(() => {
+          barFill.style.width = savedWidth;
+        }, restoreMs);
+      }
+
+      function previewPointsAddedEffect(effectId) {
+        playPointsAddedEffect(effectId || "none");
+      }
+
+      function progressSnapshotFrom(progress) {
+        return {
+          goal_id: progress.goal_id || null,
+          current_points: Number(progress.current_points) || 0,
+          target_points: Number(progress.target_points) || 0,
+        };
+      }
+
+      function isGoalCompleteSnapshot(snapshot) {
+        const target = snapshot.target_points || 0;
+        const current = snapshot.current_points || 0;
+        return target > 0 && current >= target - POINTS_EPSILON;
+      }
+
+      function wasBelowGoalSnapshot(snapshot) {
+        const target = snapshot.target_points || 0;
+        const current = snapshot.current_points || 0;
+        return target > 0 && current < target - POINTS_EPSILON;
+      }
+
+      function pointsIncreased(previous, current) {
+        return current.current_points > previous.current_points + POINTS_EPSILON;
+      }
+
+      function maybeTriggerProgressEffects(prev, next, effectsOverride) {
+        if (!next || !next.goal_id) {
+          lastProgressSnapshot = null;
+          clearGoalCompleteRepeat();
+          return;
+        }
+        const effects = normalizeProgressEffects(effectsOverride || progressEffects);
+        let previous = prev;
+        if (previous && previous.goal_id !== next.goal_id) {
+          previous = null;
+          clearGoalCompleteRepeat();
+        }
+        const current = progressSnapshotFrom(next);
+        if (!previous) {
+          lastProgressSnapshot = current;
+          syncGoalCompleteRepeat(next, effects);
+          return;
+        }
+        if (
+          effects.goal_complete !== "none"
+          && isGoalCompleteSnapshot(current)
+          && wasBelowGoalSnapshot(previous)
+        ) {
+          playGoalCompleteEffect(effects.goal_complete);
+          startGoalCompleteRepeat(effects.goal_complete, effects);
+        } else {
+          syncGoalCompleteRepeat(next, effects);
+        }
+        if (effects.points_added !== "none" && pointsIncreased(previous, current)) {
+          playPointsAddedEffect(effects.points_added);
+        }
+        lastProgressSnapshot = current;
+      }
+
+      function renderProgress(progress) {
+        progress = progress || {};
+        const hasGoal = Boolean(progress.goal_id);
+        const current = progress.current_points || 0;
+        const target = progress.target_points || 0;
+        if (showName) {
+          goalNameEl.hidden = !hasGoal;
+          goalNameEl.textContent = hasGoal ? (progress.name || "Goal") : "No active goal";
+        }
+        const pct = target > 0 ? Math.min(100, (current / target) * 100) : 0;
+        barFill.style.width = pct + "%";
+        const captionText = hasGoal
+          ? formatProgressPointsCaption(current, target, { hasGoal })
+          : "0 / 0 pts";
+        const caption = pointsCaptionEl();
+        if (caption) caption.textContent = captionText;
+        else goalPointsTextEl.textContent = captionText;
+      }
+
+      function barAppearanceFromMessage(message) {
+        if (message.bar_appearance && typeof message.bar_appearance === "object") {
+          return message.bar_appearance;
+        }
+        if (message.type === "bar_appearance") {
+          return {
+            fill_color: message.fill_color,
+            gradient_color: message.gradient_color,
+            use_gradient: message.use_gradient,
+            show_decimals: message.show_decimals,
+            font_family: message.font_family,
+          };
+        }
+        return null;
+      }
+
+      applyBarAppearance(barAppearance);
+
+      let lastProgress = null;
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const overlayMetaToken = (document.querySelector('meta[name="mrt-ui-token"]') || {}).content || "";
+      const overlayUiToken = urlParams.get("token") || overlayMetaToken;
+      const overlayWsSuffix = overlayUiToken ? `?token=${encodeURIComponent(overlayUiToken)}` : "";
+      const overlayWsUrl = `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws/overlay${overlayWsSuffix}`;
+
+      // OBS-friendly auto-reconnect: a recompiled scene or transient network
+      // hiccup must not leave the overlay frozen on "Disconnected" requiring a
+      // manual reload. Exponential backoff capped at 10s, plus jitter to
+      // avoid thundering-herd reconnects when several overlays share a host.
+      let ws = null;
+      let reconnectAttempts = 0;
+      let reconnectTimer = null;
+      let connectionErrorTimer = null;
+
+      function handleOverlayMessage(message) {
+        if (message.type === "bar_appearance") {
+          const appearance = barAppearanceFromMessage(message);
+          if (appearance) applyBarAppearance(appearance);
+          if (lastProgress) renderProgress(lastProgress);
+          return;
+        }
+        if (message.type === "progress_effects") {
+          const fx = progressEffectsFromMessage(message);
+          if (fx) {
+            progressEffects = normalizeProgressEffects(fx);
+            syncGoalCompleteRepeat(lastProgress, progressEffects);
+          }
+          return;
+        }
+        if (message.type === "progress_effects.preview") {
+          const channel = message.channel;
+          const effectId = message.effect_id || "none";
+          if (channel === "goal") previewGoalCompleteEffect(effectId);
+          else if (channel === "points") previewPointsAddedEffect(effectId);
+          return;
+        }
+        if (message.type === "progress") {
+          const prevSnapshot = lastProgressSnapshot ? { ...lastProgressSnapshot } : null;
+          lastProgress = message;
+          renderProgress(message);
+          const appearance = barAppearanceFromMessage(message);
+          if (appearance) applyBarAppearance(appearance);
+          const fx = progressEffectsFromMessage(message);
+          if (fx) progressEffects = normalizeProgressEffects(fx);
+          maybeTriggerProgressEffects(prevSnapshot, message, fx);
+          return;
+        }
+        if (message.type === "state") {
+          const prevSnapshot = lastProgressSnapshot ? { ...lastProgressSnapshot } : null;
+          if (message.progress) {
+            lastProgress = message.progress;
+            renderProgress(message.progress);
+          }
+          const appearance = barAppearanceFromMessage(message);
+          if (appearance) applyBarAppearance(appearance);
+          const fx = progressEffectsFromMessage(message);
+          if (fx) progressEffects = normalizeProgressEffects(fx);
+          if (message.progress) {
+            maybeTriggerProgressEffects(prevSnapshot, message.progress, fx);
+          }
+        }
+      }
+
+      function showOverlayDisconnected() {
+        // Defer the "Disconnected" label so the user only sees it if the
+        // reconnect attempts genuinely fail to come back quickly.
+        if (connectionErrorTimer) return;
+        connectionErrorTimer = setTimeout(() => {
+          goalPointsTextEl.textContent = "Disconnected";
+        }, 2500);
+      }
+
+      function clearOverlayDisconnected() {
+        if (connectionErrorTimer) {
+          clearTimeout(connectionErrorTimer);
+          connectionErrorTimer = null;
+        }
+      }
+
+      function connect() {
+        try {
+          ws = new WebSocket(overlayWsUrl);
+        } catch (err) {
+          scheduleReconnect();
+          return;
+        }
+        ws.onopen = () => {
+          reconnectAttempts = 0;
+          clearOverlayDisconnected();
+        };
+        ws.onmessage = (event) => {
+          let message;
+          try { message = JSON.parse(event.data); } catch { return; }
+          handleOverlayMessage(message);
+        };
+        ws.onclose = () => {
+          showOverlayDisconnected();
+          scheduleReconnect();
+        };
+        ws.onerror = () => {
+          try { ws.close(); } catch (_) { /* already closed */ }
+        };
+      }
+
+      function scheduleReconnect() {
+        if (reconnectTimer) return;
+        reconnectAttempts += 1;
+        const base = Math.min(10000, 500 * Math.pow(2, Math.min(reconnectAttempts - 1, 5)));
+        const jitter = Math.random() * 250;
+        reconnectTimer = setTimeout(() => {
+          reconnectTimer = null;
+          connect();
+        }, base + jitter);
+      }
+
+      connect();
+    })();
+  </script>
+</body>
+
+</html>

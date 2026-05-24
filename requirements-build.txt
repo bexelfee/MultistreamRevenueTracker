@@ -1,0 +1,4 @@
+# Windows release bundle (PyInstaller). Install after requirements.txt:
+#   pip install -r requirements.txt -r requirements-build.txt
+-r requirements.txt
+pyinstaller>=6.0

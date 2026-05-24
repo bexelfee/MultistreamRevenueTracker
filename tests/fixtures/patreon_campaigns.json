@@ -1,0 +1,40 @@
+{
+  "data": [
+    {
+      "id": "camp-1",
+      "type": "campaign",
+      "attributes": { "creation_name": "Main Show" },
+      "relationships": {
+        "tiers": {
+          "data": [{ "id": "tier-10", "type": "tier" }, { "id": "tier-draft", "type": "tier" }]
+        }
+      }
+    },
+    {
+      "id": "camp-2",
+      "type": "campaign",
+      "attributes": { "creation_name": "Side Project" },
+      "relationships": { "tiers": { "data": [{ "id": "tier-5", "type": "tier" }] } }
+    }
+  ],
+  "included": [
+    {
+      "id": "tier-10",
+      "type": "tier",
+      "attributes": { "title": "Supporter", "amount_cents": 1000, "published": true },
+      "relationships": { "campaign": { "data": { "id": "camp-1", "type": "campaign" } } }
+    },
+    {
+      "id": "tier-draft",
+      "type": "tier",
+      "attributes": { "title": "Draft", "amount_cents": 500, "published": false },
+      "relationships": { "campaign": { "data": { "id": "camp-1", "type": "campaign" } } }
+    },
+    {
+      "id": "tier-5",
+      "type": "tier",
+      "attributes": { "title": "Basic", "amount_cents": 500, "published": true },
+      "relationships": { "campaign": { "data": { "id": "camp-2", "type": "campaign" } } }
+    }
+  ]
+}

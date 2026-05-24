@@ -1,0 +1,4 @@
+-r requirements.txt
+playwright>=1.49.0
+pytest-playwright>=0.6.0
+websockets>=13.0

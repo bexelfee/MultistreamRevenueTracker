@@ -1,0 +1,47 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Release / PyInstaller (Windows)
+dist/
+build/
+*.spec.bak
+warn-*.txt
+xref-*.html
+*.manifest
+
+# User config & runtime data (created beside config.json / exe)
+config.json
+/data/
+/logs/
+
+# OAuth client JSON copied into the repo during local setup (use env vars instead)
+secrets.json
+client_secrets.json
+google_client_secret*.json
+
+# OAuth tokens (legacy project-root paths; new installs use data/)
+/twitch_token.json
+/yt_token.json
+/patreon_token.json
+
+# SQLite & other transient runtime files
+*.db
+*.db-shm
+*.db-wal
+/remaining_queue.json
+
+# Legacy project-root paths (prefer data/; kept for migrated installs)
+/point_rules.json
+/exchange_rates.json
+/goals/
+
+# Tests / tooling
+**/test-output.xml
+.pytest_cache/
+
+# Local notes (not shipped)
+futuretodo.md
+release-todo.md
+.cursor/

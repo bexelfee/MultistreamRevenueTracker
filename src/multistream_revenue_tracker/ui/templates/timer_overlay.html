@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Subathon timer overlay</title>
+  <link rel="icon" href="/assets/icon.png" type="image/png" />
+  <meta name="mrt-ui-token" content="{{ ui_token|default('') }}" />
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: transparent;
+    }
+
+    .overlay-root {
+      box-sizing: border-box;
+      width: var(--overlay-w, 480px);
+      height: var(--overlay-h, 120px);
+      padding: 0.25em 0.5em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--timer-font-family, system-ui, Segoe UI, sans-serif);
+      color: var(--timer-font-color, #fff);
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+    }
+
+    #timer-display {
+      margin: 0;
+      font-size: var(--timer-size, 3.5rem);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="overlay-root" class="overlay-root">
+    <p id="timer-display">00:00:00</p>
+  </div>
+  <script>
+    (function () {
+      const params = new URLSearchParams(location.search);
+      const clamp = (n, lo, hi, fallback) => {
+        const v = parseInt(n, 10);
+        return Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : fallback;
+      };
+      const w = clamp(params.get("w") ?? params.get("width"), 100, 7680, 480);
+      const h = clamp(params.get("h") ?? params.get("height"), 40, 2160, 120);
+      const root = document.getElementById("overlay-root");
+      const timerEl = document.getElementById("timer-display");
+      root.style.setProperty("--overlay-w", w + "px");
+      root.style.setProperty("--overlay-h", h + "px");
+      root.style.setProperty("--timer-size", Math.max(24, Math.round(h * 0.55)) + "px");
+
+      let timerAppearance = {
+        font_family: "system-ui, Segoe UI, sans-serif",
+        font_color: "#FFFFFF",
+        show_days: false,
+      };
+
+      function applyTimerAppearance(appearance) {
+        if (!appearance || typeof appearance !== "object") return;
+        timerAppearance = { ...timerAppearance, ...appearance };
+        if (timerAppearance.font_family) {
+          root.style.setProperty("--timer-font-family", timerAppearance.font_family);
+        }
+        if (timerAppearance.font_color) {
+          root.style.setProperty("--timer-font-color", timerAppearance.font_color);
+        }
+      }
+
+      function formatDisplay(totalSeconds, showDays) {
+        const total = Math.max(0, parseInt(totalSeconds, 10) || 0);
+        if (showDays) {
+          const days = Math.floor(total / 86400);
+          const rem = total % 86400;
+          const hours = Math.floor(rem / 3600);
+          const rem2 = rem % 3600;
+          const minutes = Math.floor(rem2 / 60);
+          const seconds = rem2 % 60;
+          return `${days} Days ${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+        }
+        const hours = Math.floor(total / 3600);
+        const rem = total % 3600;
+        const minutes = Math.floor(rem / 60);
+        const seconds = rem % 60;
+        return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+      }
+
+      function renderSubathon(subathon) {
+        subathon = subathon || {};
+        const showDays = subathon.show_days != null
+          ? Boolean(subathon.show_days)
+          : timerAppearance.show_days;
+        const seconds = subathon.remaining_seconds;
+        if (seconds != null) {
+          timerEl.textContent = formatDisplay(seconds, showDays);
+        } else {
+          timerEl.textContent = subathon.display || "00:00:00";
+        }
+      }
+
+      const timerUrlParams = new URLSearchParams(window.location.search);
+      const timerMetaToken = (document.querySelector('meta[name="mrt-ui-token"]') || {}).content || "";
+      const timerUiToken = timerUrlParams.get("token") || timerMetaToken;
+      const timerWsSuffix = timerUiToken ? `?token=${encodeURIComponent(timerUiToken)}` : "";
+      const timerWsUrl = `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws/timer${timerWsSuffix}`;
+
+      // Auto-reconnect mirrors the goal overlay's behaviour: OBS users do not
+      // see a refresh control on browser sources, and a temporary close should
+      // not require restarting the scene.
+      let ws = null;
+      let reconnectAttempts = 0;
+      let reconnectTimer = null;
+      let disconnectedTimer = null;
+
+      function handleTimerMessage(message) {
+        if (message.type === "timer_appearance") {
+          applyTimerAppearance(message);
+          return;
+        }
+        if (message.type === "subathon") {
+          renderSubathon(message);
+          return;
+        }
+        if (message.type === "state") {
+          if (message.timer_appearance) applyTimerAppearance(message.timer_appearance);
+          if (message.subathon) renderSubathon(message.subathon);
+        }
+      }
+
+      function showTimerDisconnected() {
+        if (disconnectedTimer) return;
+        disconnectedTimer = setTimeout(() => {
+          timerEl.textContent = "Disconnected";
+        }, 2500);
+      }
+
+      function clearTimerDisconnected() {
+        if (disconnectedTimer) {
+          clearTimeout(disconnectedTimer);
+          disconnectedTimer = null;
+        }
+      }
+
+      function connect() {
+        try {
+          ws = new WebSocket(timerWsUrl);
+        } catch (err) {
+          scheduleReconnect();
+          return;
+        }
+        ws.onopen = () => {
+          reconnectAttempts = 0;
+          clearTimerDisconnected();
+        };
+        ws.onmessage = (event) => {
+          let message;
+          try { message = JSON.parse(event.data); } catch { return; }
+          handleTimerMessage(message);
+        };
+        ws.onclose = () => {
+          showTimerDisconnected();
+          scheduleReconnect();
+        };
+        ws.onerror = () => {
+          try { ws.close(); } catch (_) { /* already closed */ }
+        };
+      }
+
+      function scheduleReconnect() {
+        if (reconnectTimer) return;
+        reconnectAttempts += 1;
+        const base = Math.min(10000, 500 * Math.pow(2, Math.min(reconnectAttempts - 1, 5)));
+        const jitter = Math.random() * 250;
+        reconnectTimer = setTimeout(() => {
+          reconnectTimer = null;
+          connect();
+        }, base + jitter);
+      }
+
+      connect();
+    })();
+  </script>
+</body>
+
+</html>

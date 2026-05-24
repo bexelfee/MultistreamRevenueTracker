@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-require-ws-token="{{ 'true' if require_ws_token|default(false) else 'false' }}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script>
+      (function () {
+        var stored = localStorage.getItem("mrt-ui-theme");
+        document.documentElement.dataset.theme =
+          stored === "light" || stored === "dark" ? stored : "dark";
+      })();
+    </script>
+    <title>{% block title %}{{ title }}{% endblock %}</title>
+    <link rel="icon" href="/assets/icon.png" type="image/png" />
+    <meta name="mrt-ui-token" content="{{ ui_token|default('') }}" />
+    <link rel="stylesheet" href="{{ pico_css_href }}" />
+    <link rel="stylesheet" href="/assets/progress_effects.css" />
+  </head>
+  <body>
+    <main class="container-fluid dashboard-root">
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>
