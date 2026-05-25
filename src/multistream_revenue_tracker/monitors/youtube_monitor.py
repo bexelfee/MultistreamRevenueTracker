@@ -29,8 +29,11 @@ _youtube_oauth_cancel: Event | None = None
 _youtube_oauth_server: wsgiref.simple_server.WSGIServer | None = None
 
 YOUTUBE_READONLY_SCOPE = "https://www.googleapis.com/auth/youtube.readonly"
-YOUTUBE_MEMBERSHIPS_CREATOR_SCOPE = "https://www.googleapis.com/auth/youtube.channel-memberships.creator"
-YOUTUBE_OAUTH_SCOPES = [YOUTUBE_READONLY_SCOPE, YOUTUBE_MEMBERSHIPS_CREATOR_SCOPE]
+# Per-level membership tracking would require the
+# `youtube.channel-memberships.creator` scope plus a YouTube/Google access grant
+# for the OAuth client (membershipsLevels.list and members.list are gated). We
+# only listen to live-chat events, so `youtube.readonly` is sufficient.
+YOUTUBE_OAUTH_SCOPES = [YOUTUBE_READONLY_SCOPE]
 YOUTUBE_GRPC_TARGET = "dns:///youtube.googleapis.com:443"
 ACTIVE_BROADCAST_STATUSES = {"live"}
 

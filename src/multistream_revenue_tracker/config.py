@@ -118,10 +118,13 @@ def resolve_runtime_path(config_path: Path, filename: str, *, is_dir: bool = Fal
     return data_path if not is_dir else data_dir / filename
 
 
-def _build_youtube_config(config_path: Path) -> YoutubeConfig:
+def _build_youtube_config(
+    config_path: Path,
+    raw: dict[str, Any] | None = None,
+) -> YoutubeConfig:
     return YoutubeConfig(
         token_path=resolve_runtime_path(config_path, "yt_token.json"),
-        oauth_client_config=resolve_youtube_oauth_client_config(),
+        oauth_client_config=resolve_youtube_oauth_client_config(raw),
     )
 
 
@@ -187,7 +190,7 @@ def load_bootstrap_config(path: Path) -> AppConfig:
     """
     user = normalize_user_config({})
     raw: dict[str, Any] = {}
-    youtube = _build_youtube_config(path)
+    youtube = _build_youtube_config(path, raw)
     twitch = _build_twitch_config(path, user, raw)
     patreon = _build_patreon_config(path, user, raw)
     streamlabs = _build_streamlabs_config(path, user, raw)
@@ -220,7 +223,7 @@ def load_config(path: Path) -> AppConfig:
     raw = load_raw_config(path)
     user = normalize_user_config(raw)
 
-    youtube = _build_youtube_config(path)
+    youtube = _build_youtube_config(path, raw)
     twitch = _build_twitch_config(path, user, raw)
     patreon = _build_patreon_config(path, user, raw)
     streamlabs = _build_streamlabs_config(path, user, raw)
@@ -292,6 +295,7 @@ def user_config_for_ui(cfg: AppConfig) -> dict:
             },
             "twitch": {"channel_name": cfg.twitch.channel_name},
             "patreon": {},
+            "youtube": {},
             "streamlabs": {"socket_api_token": cfg.streamlabs.socket_api_token},
         }
     )

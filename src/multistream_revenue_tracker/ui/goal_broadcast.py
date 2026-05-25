@@ -11,7 +11,6 @@ if TYPE_CHECKING:
     from ..goals.goal_service import GoalService
     from ..monitors.monitor_status import MonitorStatusRegistry
     from ..platforms.patreon_runtime import PatreonRuntime
-    from ..platforms.youtube_runtime import YoutubeRuntime
     from ..revenue.session_revenue import SessionRevenueStore
     from ..services.subathon_service import SubathonService
 
@@ -37,8 +36,7 @@ class GoalBroadcaster:
 
     async def send_state(
         self, websocket: WebSocket, goal_service: GoalService, patreon_runtime: PatreonRuntime | None = None,
-        *, youtube_runtime: YoutubeRuntime | None = None,
-        monitor_registry: MonitorStatusRegistry | None = None,
+        *, monitor_registry: MonitorStatusRegistry | None = None,
         session_revenue: SessionRevenueStore | None = None,
         user_config: dict | None = None, allow_test_events: bool = False,
         supported_currencies: list[str] | None = None,
@@ -50,7 +48,6 @@ class GoalBroadcaster:
         await websocket.send_json(
             build_ws_state(
                 goal_service, patreon_runtime,
-                youtube_runtime=youtube_runtime,
                 monitor_registry=monitor_registry,
                 session_revenue=session_revenue,
                 user_config=user_config,
@@ -80,8 +77,7 @@ class GoalBroadcaster:
 
     async def broadcast_state(
         self, goal_service: GoalService, patreon_runtime: PatreonRuntime | None = None,
-        *, youtube_runtime: YoutubeRuntime | None = None,
-        monitor_registry: MonitorStatusRegistry | None = None,
+        *, monitor_registry: MonitorStatusRegistry | None = None,
         session_revenue: SessionRevenueStore | None = None,
         user_config: dict | None = None, allow_test_events: bool = False,
         supported_currencies: list[str] | None = None,
@@ -93,7 +89,6 @@ class GoalBroadcaster:
         await self._broadcast(
             build_ws_state(
                 goal_service, patreon_runtime,
-                youtube_runtime=youtube_runtime,
                 monitor_registry=monitor_registry,
                 session_revenue=session_revenue,
                 user_config=user_config,
@@ -157,8 +152,7 @@ class GoalBroadcaster:
 
 def build_ws_state(
     goal_service: GoalService, patreon_runtime: PatreonRuntime | None = None,
-    *, youtube_runtime: YoutubeRuntime | None = None,
-    monitor_registry: MonitorStatusRegistry | None = None,
+    *, monitor_registry: MonitorStatusRegistry | None = None,
     session_revenue: SessionRevenueStore | None = None,
     user_config: dict | None = None, allow_test_events: bool = False,
     supported_currencies: list[str] | None = None,
@@ -175,8 +169,6 @@ def build_ws_state(
         payload["subathon"] = subathon_service.snapshot()
     if patreon_runtime is not None:
         payload["patreon"] = patreon_runtime.for_ui(goal_service.rules_store.rules, feature_enabled=True)
-    if youtube_runtime is not None:
-        payload["youtube"] = youtube_runtime.for_ui(goal_service.rules_store.rules, feature_enabled=True)
     if monitor_registry is not None:
         payload["monitors"] = monitor_registry.snapshot()
     if session_revenue is not None:

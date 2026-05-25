@@ -240,7 +240,6 @@ async def ui_websocket(websocket: WebSocket):
             await broadcaster.send_state(
                 websocket, goal_service,
                 websocket.app.state.patreon_runtime,
-                youtube_runtime=websocket.app.state.youtube_runtime,
                 monitor_registry=websocket.app.state.monitor_registry,
                 session_revenue=websocket.app.state.session_revenue,
                 user_config=websocket.app.state.user_config,
@@ -340,13 +339,11 @@ async def _after_goal_change(goal_service, broadcaster: GoalBroadcaster, app=Non
     user_config = app.state.user_config if app is not None else None
     allow_test_events = bool(app.state.allow_test_events) if app is not None else False
     bar_appearance = getattr(app.state, "bar_appearance", None) if app is not None else None
-    youtube_runtime = app.state.youtube_runtime if app is not None else None
     subathon_service = getattr(app.state, "subathon_service", None) if app is not None else None
     timer_appearance = getattr(app.state, "timer_appearance", None) if app is not None else None
     progress_effects = getattr(app.state, "progress_effects", None) if app is not None else None
     await broadcaster.broadcast_state(
         goal_service, patreon_runtime,
-        youtube_runtime=youtube_runtime,
         monitor_registry=monitor_registry, session_revenue=session_revenue,
         user_config=user_config, allow_test_events=allow_test_events,
         supported_currencies=list(app.state.supported_currencies) if app is not None else None,

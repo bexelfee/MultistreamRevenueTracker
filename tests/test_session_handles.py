@@ -21,9 +21,6 @@ async def test_sync_factories_always_registers_all_monitors(tmp_path: Path):
     patreon_runtime = __import__(
         "multistream_revenue_tracker.platforms.patreon_runtime", fromlist=["PatreonRuntime"]
     ).PatreonRuntime(config_path, "")
-    youtube_runtime = __import__(
-        "multistream_revenue_tracker.platforms.youtube_runtime", fromlist=["YoutubeRuntime"]
-    ).YoutubeRuntime()
     handles = SessionHandles(
         config_path=config_path,
         queue=queue,
@@ -31,7 +28,6 @@ async def test_sync_factories_always_registers_all_monitors(tmp_path: Path):
         registry=registry,
         coordinator=coordinator,
         patreon_runtime=patreon_runtime,
-        youtube_runtime=youtube_runtime,
     )
     handles._sync_factories(bootstrap)
     assert set(coordinator.factory_ids()) == {"twitch", "youtube", "patreon", "streamlabs"}

@@ -66,6 +66,13 @@ DEFAULT_USER_CONFIG: dict[str, Any] = {
         "client_id": "",
         "client_secret": "",
     },
+    "youtube": {
+        # Optional Google OAuth client JSON (same shape as the file Google
+        # gives you in API Console → Credentials). Empty string = use the
+        # bundled developer client. Stored as JSON text so users can paste
+        # the file contents straight in.
+        "oauth_client_json": "",
+    },
     "streamlabs": {
         "socket_api_token": "",
     },
@@ -110,6 +117,10 @@ def normalize_user_config(raw: dict[str, Any]) -> dict[str, Any]:
         for key in ("client_id", "client_secret"):
             if key in pa:
                 merged["patreon"][key] = str(pa[key] or "").strip()
+    yt = raw.get("youtube")
+    if isinstance(yt, dict):
+        if "oauth_client_json" in yt:
+            merged["youtube"]["oauth_client_json"] = str(yt["oauth_client_json"] or "").strip()
     sl = raw.get("streamlabs")
     if isinstance(sl, dict):
         for key in DEFAULT_USER_CONFIG["streamlabs"]:
@@ -128,10 +139,16 @@ def normalized_user_config_for_ui(normalized: dict[str, Any]) -> dict[str, Any]:
     patreon = dict(normalized.get("patreon") or DEFAULT_USER_CONFIG["patreon"])
     if patreon.get("client_secret"):
         patreon["client_secret"] = mask_streamlabs_token(patreon.get("client_secret"))
+    youtube = dict(normalized.get("youtube") or DEFAULT_USER_CONFIG["youtube"])
+    if youtube.get("oauth_client_json"):
+        # Same masking sentinel as Patreon secret / Streamlabs token: dashboard
+        # treats unchanged sentinel value as "leave existing JSON in place".
+        youtube["oauth_client_json"] = mask_streamlabs_token(youtube.get("oauth_client_json"))
     return {
         "app": dict(normalized["app"]),
         "twitch": dict(normalized["twitch"]),
         "patreon": patreon,
+        "youtube": youtube,
         "streamlabs": streamlabs,
         "bar_appearance": extract_bar_appearance(normalized.get("app")),
         "timer_appearance": extract_timer_appearance(normalized.get("app")),
@@ -223,6 +240,36 @@ def clean_config_patch(patch: dict[str, Any]) -> dict[str, Any]:
                 cleaned_pa["client_secret"] = raw_secret
         if cleaned_pa:
             cleaned["patreon"] = cleaned_pa
+
+    yt = patch.get("youtube")
+    if yt is not None:
+        if not isinstance(yt, dict):
+            raise ValueError("youtube must be an object")
+        cleaned_yt: dict[str, Any] = {}
+        if "oauth_client_json" in yt:
+            raw_json = str(yt["oauth_client_json"] or "").strip()
+            if not is_masked_streamlabs_token(raw_json):
+                if raw_json:
+                    # Validate JSON shape so a malformed paste fails fast
+                    # rather than at first OAuth attempt.
+                    try:
+                        parsed = json.loads(raw_json)
+                    except json.JSONDecodeError as exc:
+                        raise ValueError(
+                            f"youtube.oauth_client_json must be valid JSON: {exc.msg}"
+                        ) from exc
+                    if not isinstance(parsed, dict) or not (
+                        isinstance(parsed.get("installed"), dict)
+                        or isinstance(parsed.get("web"), dict)
+                    ):
+                        raise ValueError(
+                            "youtube.oauth_client_json must contain an 'installed' "
+                            "or 'web' object (the JSON downloaded from Google API "
+                            "Console → Credentials)."
+                        )
+                cleaned_yt["oauth_client_json"] = raw_json
+        if cleaned_yt:
+            cleaned["youtube"] = cleaned_yt
 
     return cleaned
 
@@ -348,6 +395,14 @@ def _deep_merge_user_fields(raw: dict[str, Any], patch: dict[str, Any]) -> None:
                 target[key] = patch["patreon"][key]
         if "campaign_id" in patch["patreon"]:
             target["campaign_id"] = patch["patreon"]["campaign_id"]
+    if "youtube" in patch:
+        target = raw.setdefault("youtube", {})
+        if not isinstance(target, dict):
+            target = {}
+            raw["youtube"] = target
+        for key in DEFAULT_USER_CONFIG["youtube"]:
+            if key in patch["youtube"]:
+                target[key] = patch["youtube"][key]
 
 
 def _deep_merge(base: dict[str, Any], patch: dict[str, Any]) -> None:

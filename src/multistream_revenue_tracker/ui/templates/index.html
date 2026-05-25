@@ -1,102 +1,107 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <nav class="tab-nav" aria-label="Main navigation">
-    <button type="button" class="tab-btn active" data-tab="dashboard">Dashboard</button>
-    <button type="button" class="tab-btn" data-tab="configuration">Configuration</button>
-    <div class="nav-actions">
-      <span class="app-version" title="Application version">v{{ app_version }}</span>
-      <button type="button" id="theme-toggle-btn" class="theme-toggle-btn nav-action-btn secondary outline" title="Toggle light/dark mode" aria-pressed="true">Dark mode</button>
-      <a href="{{ github_issues_href }}" class="secondary outline nav-action-btn report-bug-btn" target="_blank" rel="noopener noreferrer">Report a Bug</a>
-      <button type="button" id="restart-btn" class="restart-btn nav-action-btn">Restart</button>
-      <button type="button" id="shutdown-btn" class="shutdown-btn nav-action-btn">Shutdown</button>
-    </div>
-  </nav>
-
-  <div id="restart-loading" class="restart-loading" hidden aria-live="polite">
-    <div class="restart-loading-panel" role="status">
-      <div class="restart-spinner" aria-hidden="true"></div>
-      <p id="restart-loading-text" class="restart-loading-text">Loading...</p>
-    </div>
+<nav class="tab-nav" aria-label="Main navigation">
+  <button type="button" class="tab-btn active" data-tab="dashboard">Dashboard</button>
+  <button type="button" class="tab-btn" data-tab="configuration">Configuration</button>
+  <div class="nav-actions">
+    <span class="app-title" title="Application name">Multi Stream Revenue Tracker</span>
+    <span class="app-version" title="Application version">v{{ app_version }}</span>
+    <button type="button" id="theme-toggle-btn" class="theme-toggle-btn nav-action-btn secondary outline"
+      title="Toggle light/dark mode" aria-pressed="true">Dark mode</button>
+    <a href="{{ github_issues_href }}" class="secondary outline nav-action-btn report-bug-btn" target="_blank"
+      rel="noopener noreferrer">Report a Bug</a>
+    <button type="button" id="restart-btn" class="restart-btn nav-action-btn">Restart</button>
+    <button type="button" id="shutdown-btn" class="shutdown-btn nav-action-btn">Shutdown</button>
   </div>
+</nav>
 
-  <div id="tab-dashboard" class="tab-panel active">
+<div id="restart-loading" class="restart-loading" hidden aria-live="polite">
+  <div class="restart-loading-panel" role="status">
+    <div class="restart-spinner" aria-hidden="true"></div>
+    <p id="restart-loading-text" class="restart-loading-text">Loading...</p>
+  </div>
+</div>
+
+<div id="tab-dashboard" class="tab-panel active">
   <div class="dashboard">
     <div class="dashboard-top">
-    <section class="panel panel-rules" aria-label="Point conversion">
-      <h2>Point conversion</h2>
-      <div class="panel-rules-body">
-      <div id="patreon-campaign-row" class="stack-tight" hidden>
-        <label>Patreon campaign
-          <select id="patreon-campaign-select"></select>
-        </label>
-        <p id="patreon-status" class="muted"></p>
-      </div>
-      <form id="rules-form">
-        <div id="rules-fields" class="rules-grid"></div>
-        <button type="submit" id="rules-save-btn" class="btn-compact" disabled>Save rules</button>
-      </form>
-      </div>
-    </section>
-
-    <div class="panel panel-create-goal" aria-label="Goals">
-      <section class="panel-section panel-create" aria-label="Create goal">
-        <h2>Create goal</h2>
-        <form id="goal-create-form" class="stack-tight">
-          <label>Name <input type="text" id="goal-name-input" required /></label>
-          <label>Target <input type="number" id="goal-target-input" min="1" required /></label>
-          <label>Start <input type="datetime-local" id="goal-start-input" placeholder="Now" title="Now" /></label>
-          <button type="submit">Create</button>
-        </form>
+      <section class="panel panel-rules" aria-label="Point conversion">
+        <h2>Point conversion</h2>
+        <div class="panel-rules-body">
+          <div id="patreon-campaign-row" class="stack-tight" hidden>
+            <label>Patreon campaign
+              <select id="patreon-campaign-select"></select>
+            </label>
+            <p id="patreon-status" class="muted"></p>
+          </div>
+          <form id="rules-form">
+            <div id="rules-fields" class="rules-grid"></div>
+            <button type="submit" id="rules-save-btn" class="btn-compact" disabled>Save rules</button>
+          </form>
+        </div>
       </section>
-      <section class="panel-section panel-goal" aria-label="Current goal">
-        <h2>Current goal</h2>
-      <label class="stack-tight">Goal <select id="goal-select"></select></label>
-      <button type="button" id="goal-delete-btn" class="secondary btn-compact">Delete</button>
-      <div id="points-change" class="stack-tight" hidden>
-        <h3>Add / remove points</h3>
-        <label>Amount <input type="text" id="points-amount" inputmode="decimal" placeholder="0.00" value="0" /></label>
-        <div class="btn-row">
-          <button type="button" id="points-add-btn">ADD</button>
-          <button type="button" id="points-remove-btn" class="secondary">REMOVE</button>
-          <button type="button" id="points-reset-btn" class="secondary outline">Reset</button>
-        </div>
-      </div>
-      </section>
-    </div>
 
-    <section class="panel panel-monitors" aria-label="Monitor status">
-      <h2>Monitors</h2>
-      <div class="monitors-twitch-section">
-        <div class="twitch-channel-row">
-          <label class="twitch-channel-label">Twitch username
-            <input type="text" id="dash-twitch-channel" class="twitch-channel-input" autocomplete="off" placeholder="your_twitch_login" />
-          </label>
-          <button type="button" id="dash-twitch-channel-save-btn" class="btn-compact" disabled>Save</button>
-          <span id="dash-twitch-channel-status" class="muted twitch-channel-status" aria-live="polite"></span>
-        </div>
+      <div class="panel panel-create-goal" aria-label="Goals">
+        <section class="panel-section panel-create" aria-label="Create goal">
+          <h2>Create goal</h2>
+          <form id="goal-create-form" class="stack-tight">
+            <label>Name <input type="text" id="goal-name-input" required /></label>
+            <label>Target <input type="number" id="goal-target-input" min="1" required /></label>
+            <label>Start <input type="datetime-local" id="goal-start-input" placeholder="Now" title="Now" /></label>
+            <button type="submit">Create</button>
+          </form>
+        </section>
+        <section class="panel-section panel-goal" aria-label="Current goal">
+          <h2>Current goal</h2>
+          <label class="stack-tight">Goal <select id="goal-select"></select></label>
+          <button type="button" id="goal-delete-btn" class="secondary btn-compact">Delete</button>
+          <div id="points-change" class="stack-tight" hidden>
+            <h3>Add / remove points</h3>
+            <label>Amount <input type="text" id="points-amount" inputmode="decimal" placeholder="0.00"
+                value="0" /></label>
+            <div class="btn-row">
+              <button type="button" id="points-add-btn">ADD</button>
+              <button type="button" id="points-remove-btn" class="secondary">REMOVE</button>
+              <button type="button" id="points-reset-btn" class="secondary outline">Reset</button>
+            </div>
+          </div>
+        </section>
       </div>
-      <ul id="monitor-status-list" class="monitor-list"></ul>
-      <div class="session-revenue-panel">
-        <h3 class="session-revenue-title">This session</h3>
-        <div class="session-revenue-scroll">
-          <table class="session-revenue-table" id="session-revenue-table">
-            <thead>
-              <tr>
-                <th>Source</th>
-                <th>Type</th>
-                <th>Amount</th>
-                <th>From</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="session-revenue-body"></tbody>
-          </table>
-          <p id="session-revenue-empty" class="muted session-revenue-empty">No revenue events yet this session.</p>
+
+      <section class="panel panel-monitors" aria-label="Monitor status">
+        <h2>Monitors</h2>
+        <div class="monitors-twitch-section">
+          <div class="twitch-channel-row">
+            <label class="twitch-channel-label">Twitch username
+              <input type="text" id="dash-twitch-channel" class="twitch-channel-input" autocomplete="off"
+                placeholder="your_twitch_login" />
+            </label>
+            <button type="button" id="dash-twitch-channel-save-btn" class="btn-compact" disabled>Save</button>
+            <span id="dash-twitch-channel-status" class="muted twitch-channel-status" aria-live="polite"></span>
+          </div>
         </div>
-      </div>
-    </section>
+        <ul id="monitor-status-list" class="monitor-list"></ul>
+        <div class="session-revenue-panel">
+          <h3 class="session-revenue-title">This session</h3>
+          <div class="session-revenue-scroll">
+            <table class="session-revenue-table" id="session-revenue-table">
+              <thead>
+                <tr>
+                  <th>Source</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>From</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="session-revenue-body"></tbody>
+            </table>
+            <p id="session-revenue-empty" class="muted session-revenue-empty">No revenue events yet this session.</p>
+          </div>
+        </div>
+      </section>
     </div>
 
     <section id="progress-panel" class="panel panel-progress" aria-label="Goal progress">
@@ -135,9 +140,11 @@
           Points overlay URL
           <input type="text" id="goal-overlay-url" readonly />
         </label>
-        <button type="button" id="goal-overlay-open-btn" class="btn-compact secondary overlay-open-btn">Open in new tab</button>
+        <button type="button" id="goal-overlay-open-btn" class="btn-compact secondary overlay-open-btn">Open in new
+          tab</button>
       </div>
-      <p class="muted overlay-url-hint">You can change the width and height of the bar by modifying the numbers in the URL.</p>
+      <p class="muted overlay-url-hint">You can change the width and height of the bar by modifying the numbers in the
+        URL.</p>
       <div class="progress-effects-block" aria-label="Progress effects">
         <h3 class="progress-effects-heading">Effects</h3>
         <div class="progress-effects-controls">
@@ -163,58 +170,65 @@
     <section id="subathon-panel" class="panel panel-subathon" aria-label="Subathon timer">
       <h2>Subathon</h2>
       <div class="subathon-body">
-      <p id="subathon-display" class="subathon-display" aria-live="polite">00:00:00</p>
-      <div class="timer-appearance-controls" aria-label="Timer appearance">
-        <label class="bar-appearance-field" title="Timer text colour">
-          <span class="bar-appearance-label">Colour</span>
-          <input type="color" id="timer-font-color" value="#FFFFFF" />
-        </label>
-        <label class="bar-appearance-field">
-          <span class="bar-appearance-label">Font</span>
-          <select id="timer-font-family"></select>
-        </label>
-        <label class="bar-appearance-field bar-appearance-check">
-          <input type="checkbox" id="timer-show-days" />
-          <span>Show days</span>
-        </label>
-        <button type="button" id="timer-appearance-save-btn" class="btn-compact" disabled>Save timer</button>
-      </div>
-      <div class="subathon-transport btn-row">
-        <button type="button" id="subathon-play-btn" class="btn-icon" title="Play / Resume" aria-label="Play timer">▶</button>
-        <button type="button" id="subathon-pause-btn" class="btn-icon secondary" title="Pause" aria-label="Pause timer">⏸</button>
-      </div>
-      <div class="subathon-set-time stack-tight">
-        <span class="subathon-set-label">Set time</span>
-        <div class="subathon-time-inputs">
-          <label>H <input type="number" id="subathon-hours" min="0" max="99" value="0" class="nonneg-int" /></label>
-          <label>M <input type="number" id="subathon-minutes" min="0" max="59" value="0" class="nonneg-int" /></label>
-          <label>S <input type="number" id="subathon-seconds-input" min="0" max="59" value="0" class="nonneg-int" /></label>
-          <button type="button" id="subathon-apply-time-btn" class="btn-compact">Apply</button>
+        <p id="subathon-display" class="subathon-display" aria-live="polite">00:00:00</p>
+        <div class="timer-appearance-controls" aria-label="Timer appearance">
+          <label class="bar-appearance-field" title="Timer text colour">
+            <span class="bar-appearance-label">Colour</span>
+            <input type="color" id="timer-font-color" value="#FFFFFF" />
+          </label>
+          <label class="bar-appearance-field">
+            <span class="bar-appearance-label">Font</span>
+            <select id="timer-font-family"></select>
+          </label>
+          <label class="bar-appearance-field bar-appearance-check">
+            <input type="checkbox" id="timer-show-days" />
+            <span>Show days</span>
+          </label>
+          <button type="button" id="timer-appearance-save-btn" class="btn-compact" disabled>Save timer</button>
         </div>
-      </div>
-      <div class="subathon-ratio stack-tight">
-        <span class="subathon-set-label">Points to time</span>
-        <div class="subathon-ratio-inputs">
-          <label><input type="number" id="subathon-points" min="1" value="10" class="nonneg-int" /> points =</label>
-          <label><input type="number" id="subathon-seconds-added" min="1" value="60" class="nonneg-int" /> seconds added</label>
-          <button type="button" id="subathon-save-settings-btn" class="btn-compact">Save</button>
+        <div class="subathon-transport btn-row">
+          <button type="button" id="subathon-play-btn" class="btn-icon" title="Play / Resume"
+            aria-label="Play timer">▶</button>
+          <button type="button" id="subathon-pause-btn" class="btn-icon secondary" title="Pause"
+            aria-label="Pause timer">⏸</button>
         </div>
-        <p id="subathon-settings-status" class="muted" aria-live="polite"></p>
-      </div>
-      <div class="overlay-url-row">
-        <label class="stack-tight overlay-url-field overlay-url-field-grow">
-          Timer overlay URL
-          <input type="text" id="subathon-overlay-url" readonly />
-        </label>
-        <button type="button" id="subathon-overlay-open-btn" class="btn-compact secondary overlay-open-btn">Open in new tab</button>
-      </div>
-      <p class="muted overlay-url-hint">You can change the width and height of the timer by modifying the numbers in the URL.</p>
+        <div class="subathon-set-time stack-tight">
+          <span class="subathon-set-label">Set time</span>
+          <div class="subathon-time-inputs">
+            <label>H <input type="number" id="subathon-hours" min="0" max="99" value="0" class="nonneg-int" /></label>
+            <label>M <input type="number" id="subathon-minutes" min="0" max="59" value="0" class="nonneg-int" /></label>
+            <label>S <input type="number" id="subathon-seconds-input" min="0" max="59" value="0"
+                class="nonneg-int" /></label>
+            <button type="button" id="subathon-apply-time-btn" class="btn-compact">Apply</button>
+          </div>
+        </div>
+        <div class="subathon-ratio stack-tight">
+          <span class="subathon-set-label">Points to time</span>
+          <div class="subathon-ratio-inputs">
+            <label><input type="number" id="subathon-points" min="1" value="10" class="nonneg-int" /> points =</label>
+            <label><input type="number" id="subathon-seconds-added" min="1" value="60" class="nonneg-int" /> seconds
+              added</label>
+            <button type="button" id="subathon-save-settings-btn" class="btn-compact">Save</button>
+          </div>
+          <p id="subathon-settings-status" class="muted" aria-live="polite"></p>
+        </div>
+        <div class="overlay-url-row">
+          <label class="stack-tight overlay-url-field overlay-url-field-grow">
+            Timer overlay URL
+            <input type="text" id="subathon-overlay-url" readonly />
+          </label>
+          <button type="button" id="subathon-overlay-open-btn" class="btn-compact secondary overlay-open-btn">Open in
+            new tab</button>
+        </div>
+        <p class="muted overlay-url-hint">You can change the width and height of the timer by modifying the numbers in
+          the URL.</p>
       </div>
     </section>
 
     <section id="alerts-panel" class="panel panel-alerts collapsed" aria-label="Alerts">
       <header class="alerts-header">
-        <button type="button" id="alerts-toggle-btn" class="secondary outline btn-compact alerts-toggle-btn" aria-expanded="false">
+        <button type="button" id="alerts-toggle-btn" class="secondary outline btn-compact alerts-toggle-btn"
+          aria-expanded="false">
           <span id="alerts-toggle-label">Show alerts</span>
           <span id="alerts-badge" class="alerts-badge" hidden aria-hidden="true"></span>
         </button>
@@ -237,9 +251,11 @@
     <section id="test-panel" class="panel panel-test collapsed" aria-label="Test revenue events">
       <header class="test-header">
         <button type="button" id="test-toggle-btn" class="secondary outline btn-compact">Show test events</button>
-        <button type="button" id="test-delete-all-btn" class="secondary outline btn-compact">Delete all test transactions</button>
+        <button type="button" id="test-delete-all-btn" class="secondary outline btn-compact">Delete all test
+          transactions</button>
       </header>
-      <p class="muted test-hint">Queued through the same pipeline as live monitors (DB + progress update). Marked <code>is_test</code> in the database.</p>
+      <p class="muted test-hint">Queued through the same pipeline as live monitors (DB + progress update). Marked
+        <code>is_test</code> in the database.</p>
       <div id="test-events-grid" class="test-grid"></div>
     </section>
 
@@ -251,56 +267,80 @@
       <div id="rates-display" class="rates-scroll"></div>
     </section>
   </div>
-  </div>
+</div>
 
-  <div id="tab-configuration" class="tab-panel">
-    <form id="config-form" class="config-form" aria-label="Application configuration">
-      <div class="config-fields">
-        <label class="toggle-row">
-          <span>Enable test events on dashboard</span>
-          <input type="checkbox" id="cfg-enable-test-events" role="switch" />
-        </label>
-        <label class="toggle-row">
-          <span>Log chat messages</span>
-          <input type="checkbox" id="cfg-log-chat-testing" role="switch" />
-        </label>
-        <label class="toggle-row" title="When enabled, overlay URLs include a token that changes each launch. Leave off for stable OBS browser source URLs.">
-          <span>Require WebSocket token (overlay URLs change each launch)</span>
-          <input type="checkbox" id="cfg-require-ws-token" role="switch" />
-        </label>
-        <label>Base currency
-          <input type="text" id="cfg-base-currency" maxlength="3" class="currency-input" list="currency-options" autocomplete="off" />
-        </label>
-        <label>UI port
-          <input type="number" id="cfg-ui-port" min="1024" max="65535" step="1" value="8080" />
-        </label>
-        <label>Twitch duplicate sub detection timeout (seconds)
-          <input type="number" id="cfg-twitch-sub-resub-dedupe" min="0" max="3600" step="1" value="300" />
-        </label>
-        <label class="config-label-with-link">Streamlabs Socket API token
-          <a class="config-field-link" href="{{ streamlabs_api_settings_href }}" target="_blank" rel="noopener noreferrer">Create API token in Streamlabs</a>
-          <input type="password" id="cfg-streamlabs-token" autocomplete="off" placeholder="Streamlabs Socket API Token" />
-        </label>
-        <p class="muted config-note">Save your token here before using <strong>Connect</strong> on Streamlabs in Monitors. If you change the token while connected, disconnect and connect again.</p>
+<div id="tab-configuration" class="tab-panel">
+  <form id="config-form" class="config-form" aria-label="Application configuration">
+    <div class="config-fields">
+      <label class="toggle-row">
+        <span>Enable test events on dashboard</span>
+        <input type="checkbox" id="cfg-enable-test-events" role="switch" />
+      </label>
+      <label class="toggle-row">
+        <span>Log chat messages</span>
+        <input type="checkbox" id="cfg-log-chat-testing" role="switch" />
+      </label>
+      <label class="toggle-row"
+        title="When enabled, overlay URLs include a token that changes each launch. Leave off for stable OBS browser source URLs.">
+        <span>Require WebSocket token (overlay URLs change each launch)</span>
+        <input type="checkbox" id="cfg-require-ws-token" role="switch" />
+      </label>
+      <label>Base currency
+        <input type="text" id="cfg-base-currency" maxlength="3" class="currency-input" list="currency-options"
+          autocomplete="off" />
+      </label>
+      <label>UI port
+        <input type="number" id="cfg-ui-port" min="1024" max="65535" step="1" value="8080" />
+      </label>
+      <label>Twitch duplicate sub detection timeout (seconds)
+        <input type="number" id="cfg-twitch-sub-resub-dedupe" min="0" max="3600" step="1" value="300" />
+      </label>
+      <label class="config-label-with-link">Streamlabs Socket API token
+        <a class="config-field-link" href="{{ streamlabs_api_settings_href }}" target="_blank"
+          rel="noopener noreferrer">Create API token in Streamlabs</a>
+        <input type="password" id="cfg-streamlabs-token" autocomplete="off" placeholder="Streamlabs Socket API Token" />
+      </label>
+      <p class="muted config-note">Save your token here before using <strong>Connect</strong> on Streamlabs in Monitors.
+        If you change the token while connected, disconnect and connect again.</p>
+      <details class="config-advanced">
+        <summary>Advanced — bring your own OAuth apps</summary>
+        <p class="muted config-note">All fields below are optional. Leave them empty to use the credentials bundled with
+          this release. They exist so you can run this tool against your own Patreon / Google API project if you would
+          prefer additional security or higher API quota.</p>
         <label>Patreon client ID
-          <input type="text" id="cfg-patreon-client-id" autocomplete="off" placeholder="Optional — uses bundled app if empty" />
+          <input type="text" id="cfg-patreon-client-id" autocomplete="off"
+            placeholder="Optional — uses bundled app if empty" />
         </label>
         <label class="config-label-with-link">Patreon client secret
-          <a class="config-field-link" href="{{ patreon_client_register_href }}" target="_blank" rel="noopener noreferrer">Register a Patreon client app</a>
-          <input type="password" id="cfg-patreon-client-secret" autocomplete="off" placeholder="Optional — uses bundled app if empty" />
+          <a class="config-field-link" href="{{ patreon_client_register_href }}" target="_blank"
+            rel="noopener noreferrer">Register a Patreon client app</a>
+          <input type="password" id="cfg-patreon-client-secret" autocomplete="off"
+            placeholder="Optional — uses bundled app if empty" />
         </label>
-        <p class="muted config-note">Add your own Patreon application client ID and secret if you would prefer additional security. Leave both empty to use the credentials bundled with this release. Register redirect URI <code>http://localhost:8765/callback</code> on your Patreon app.</p>
-      </div>
-      <div class="config-actions">
-        <button type="submit" id="config-save-btn" class="btn-compact" disabled>Save configuration</button>
-        <p id="config-save-status" class="config-save-status muted" aria-live="polite"></p>
-      </div>
-      <p class="muted config-note">Changes to <strong>UI port</strong>, <strong>WebSocket token requirement</strong>, or <strong>Twitch duplicate sub detection timeout</strong> take effect after you restart the application.</p>
-    </form>
-  </div>
+        <p class="muted config-note">Register redirect URI <code>http://localhost:8765/callback</code> on your Patreon
+          app.</p>
+        <label class="config-label-with-link">YouTube / Google OAuth client JSON
+          <a class="config-field-link" href="{{ google_oauth_client_register_href }}" target="_blank"
+            rel="noopener noreferrer">Create OAuth client in Google API Console</a>
+          <textarea id="cfg-youtube-oauth-client-json" rows="6" autocomplete="off" spellcheck="false"
+            placeholder='Optional — paste the full client_secret.json here, e.g. {"installed":{"client_id":"...","client_secret":"...","redirect_uris":["http://localhost"]}}'></textarea>
+        </label>
+        <p class="muted config-note">Paste the JSON exactly as Google gives it to you (Application type: <strong>Desktop
+            app</strong>). Add scope <code>.../auth/youtube.readonly</code> on the OAuth consent screen. Leaves the
+          bundled developer client untouched if empty.</p>
+      </details>
+    </div>
+    <div class="config-actions">
+      <button type="submit" id="config-save-btn" class="btn-compact" disabled>Save configuration</button>
+      <p id="config-save-status" class="config-save-status muted" aria-live="polite"></p>
+    </div>
+    <p class="muted config-note">Changes to <strong>UI port</strong>, <strong>WebSocket token requirement</strong>, or
+      <strong>Twitch duplicate sub detection timeout</strong> take effect after you restart the application.</p>
+  </form>
+</div>
 
-  <link rel="stylesheet" href="/assets/dashboard.css" />
-  <datalist id="currency-options"></datalist>
+<link rel="stylesheet" href="/assets/dashboard.css" />
+<datalist id="currency-options"></datalist>
 
-  <script src="/assets/dashboard.js" defer></script>
+<script src="/assets/dashboard.js" defer></script>
 {% endblock %}

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import logging
-from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -22,8 +21,8 @@ def default_point_rules() -> dict[str, dict]:
         EventType.TWITCH_RESUBSCRIPTION.value: {"mode": "per_event_tier", "tier_points": dict(DEFAULT_TIER_POINTS)},
         EventType.YOUTUBE_SUPER_CHAT.value: {"mode": "per_eur", "points_per_eur": 100},
         EventType.YOUTUBE_SUPER_STICKER.value: {"mode": "per_eur", "points_per_eur": 100},
-        EventType.YOUTUBE_MEMBERSHIP.value: {"mode": "per_event_tier", "tier_points": {}},
-        EventType.YOUTUBE_MEMBERSHIP_GIFT.value: {"mode": "per_quantity_tier", "tier_points": {}},
+        EventType.YOUTUBE_MEMBERSHIP.value: {"mode": "per_event", "points_per_event": 0},
+        EventType.YOUTUBE_MEMBERSHIP_GIFT.value: {"mode": "per_quantity", "points_per_unit": 0},
         EventType.YOUTUBE_GIFT.value: {"mode": "per_quantity", "points_per_unit": 1},
         EventType.PATREON_PLEDGE_CREATE.value: {"mode": "per_event_tier", "tier_points": {}},
         EventType.STREAMLABS_DONATION.value: {"mode": "per_eur", "points_per_eur": 100},
@@ -44,7 +43,6 @@ class PointRulesStore:
     base_currency: str = "EUR"
     _rules: dict[str, dict] = field(default_factory=dict)
     _rates: dict = field(default_factory=dict)
-    youtube_level_resolver: Callable[[str | None], str | None] | None = None
 
     def load(self) -> None:
         self._rules = self._load_rules_file()
@@ -104,8 +102,19 @@ class PointRulesStore:
             key = event_type.value
             if key not in normalized:
                 continue
-            if key in raw and isinstance(raw[key], dict):
-                normalized[key] = {**normalized[key], **raw[key]}
+            user_rule = raw.get(key)
+            if not isinstance(user_rule, dict):
+                continue
+            default_rule = normalized[key]
+            # Force-merge only fields the current default uses. This drops
+            # stale fields when the rule shape changes between releases (e.g.
+            # YouTube memberships moved from per-tier to flat per-event), so
+            # existing point_rules.json files migrate without manual edits.
+            merged = dict(default_rule)
+            for field, value in user_rule.items():
+                if field in default_rule and field != "mode":
+                    merged[field] = value
+            normalized[key] = merged
         return normalized
 
     def _normalize_rates(self, raw: dict) -> dict:

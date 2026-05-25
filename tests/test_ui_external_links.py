@@ -69,4 +69,5 @@ def test_index_html_includes_app_version() -> None:
     client = TestClient(create_app())
     response = client.get("/")
     assert response.status_code == 200
+    assert "Multi Stream Revenue Tracker" in response.text
     assert f"v{__version__}" in response.text

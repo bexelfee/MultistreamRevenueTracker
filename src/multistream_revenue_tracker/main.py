@@ -24,7 +24,6 @@ from .revenue.events import StreamEvent
 from .services.exchange_rates import refresh_exchange_rates_file
 from .goals.goal_service import build_goal_service
 from .platforms.patreon_runtime import PatreonRuntime
-from .platforms.youtube_runtime import YoutubeRuntime
 from .revenue.revenue_db import RevenueDatabase
 from .services.runtime_cleanup import clean_transient_data
 from .revenue.session_handles import SessionHandles
@@ -130,8 +129,6 @@ async def _run_app_session_body(
     LOGGER.info(f"created shared queue (max_size={MAX_QUEUE_SIZE}) and shutdown event")
 
     patreon_runtime = PatreonRuntime(config_path, app_cfg.patreon.campaign_id)
-    youtube_runtime = YoutubeRuntime()
-    goal_service.rules_store.youtube_level_resolver = youtube_runtime.resolve_level_id
 
     monitor_registry = MonitorStatusRegistry(build_initial_status(app_cfg, patreon_runtime))
     session_revenue = SessionRevenueStore()
@@ -149,7 +146,6 @@ async def _run_app_session_body(
         registry=monitor_registry,
         coordinator=monitor_coordinator,
         patreon_runtime=patreon_runtime,
-        youtube_runtime=youtube_runtime,
     )
     session_handles._sync_factories(app_cfg)
     session_handles.set_connect_patreon(session_handles._build_connect_patreon(app_cfg))
@@ -177,7 +173,6 @@ async def _run_app_session_body(
                 event_queue=queue,
                     allow_test_events=app_cfg.app.enable_test_events,
                     patreon_runtime=patreon_runtime,
-                    youtube_runtime=youtube_runtime,
                     monitor_registry=monitor_registry,
                 monitor_coordinator=monitor_coordinator,
                 session_revenue=session_revenue,

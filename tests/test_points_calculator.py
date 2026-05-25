@@ -4,8 +4,6 @@ from multistream_revenue_tracker.revenue.events import EventType, Platform
 from multistream_revenue_tracker.goals.point_rules import PointRulesStore
 from multistream_revenue_tracker.goals.points_calculator import points_for_event, points_for_event_fractional
 from multistream_revenue_tracker.revenue.revenue_db import StoredRevenueEvent
-from multistream_revenue_tracker.platforms.youtube_catalog import YoutubeLevelInfo
-from multistream_revenue_tracker.platforms.youtube_runtime import YoutubeRuntime
 
 
 def _stored(**kwargs) -> StoredRevenueEvent:
@@ -131,17 +129,14 @@ def test_fractional_rule_keeps_exact_points_until_display_rounding(tmp_path):
     assert points_for_event(event, store) == 2
 
 
-def test_youtube_membership_per_tier_points(tmp_path):
+def test_youtube_membership_flat_per_event(tmp_path):
+    # New memberships are now scored as a flat per-event amount (Google's
+    # membershipsLevels.list API is gated; we only see "new sponsor" via
+    # the live-chat scope, so we can't tell the levels apart).
     store = _rules_store(tmp_path)
-    runtime = YoutubeRuntime()
-    runtime.levels = [YoutubeLevelInfo(id="L1", name="Gold")]
-    store.youtube_level_resolver = runtime.resolve_level_id
     store.save_rules({
         **store.rules,
-        EventType.YOUTUBE_MEMBERSHIP.value: {
-            "mode": "per_event_tier",
-            "tier_points": {"L1": 250},
-        },
+        EventType.YOUTUBE_MEMBERSHIP.value: {"mode": "per_event", "points_per_event": 250},
     })
     event = _stored(
         platform=Platform.YOUTUBE,
@@ -151,17 +146,11 @@ def test_youtube_membership_per_tier_points(tmp_path):
     assert points_for_event(event, store) == 250
 
 
-def test_youtube_membership_gift_quantity_times_tier(tmp_path):
+def test_youtube_membership_gift_quantity_only(tmp_path):
     store = _rules_store(tmp_path)
-    runtime = YoutubeRuntime()
-    runtime.levels = [YoutubeLevelInfo(id="L1", name="Gold")]
-    store.youtube_level_resolver = runtime.resolve_level_id
     store.save_rules({
         **store.rules,
-        EventType.YOUTUBE_MEMBERSHIP_GIFT.value: {
-            "mode": "per_quantity_tier",
-            "tier_points": {"L1": 100},
-        },
+        EventType.YOUTUBE_MEMBERSHIP_GIFT.value: {"mode": "per_quantity", "points_per_unit": 100},
     })
     event = _stored(
         platform=Platform.YOUTUBE,
@@ -172,38 +161,25 @@ def test_youtube_membership_gift_quantity_times_tier(tmp_path):
     assert points_for_event(event, store) == 300
 
 
-def test_youtube_membership_unknown_tier_zero_and_warning(tmp_path, caplog):
-    store = _rules_store(tmp_path)
-    runtime = YoutubeRuntime()
-    runtime.levels = [YoutubeLevelInfo(id="L1", name="Gold")]
-    store.youtube_level_resolver = runtime.resolve_level_id
-    store.save_rules({
-        **store.rules,
-        EventType.YOUTUBE_MEMBERSHIP.value: {
-            "mode": "per_event_tier",
-            "tier_points": {"L1": 250},
-        },
-    })
-    event = _stored(
-        platform=Platform.YOUTUBE,
-        event_type=EventType.YOUTUBE_MEMBERSHIP,
-        tier="Platinum",
+def test_legacy_per_tier_youtube_rules_migrate_to_per_event(tmp_path):
+    # If a user updated from a release that stored the old
+    # `per_event_tier` shape for YouTube memberships, normalize_rules
+    # should drop the dead tier_points data and force the current default
+    # mode + a 0 points_per_event value (so the user explicitly sets it).
+    point_rules_path = tmp_path / "point_rules.json"
+    point_rules_path.write_text(
+        '{"youtube_membership": {"mode": "per_event_tier", "tier_points": {"L1": 250}}}',
+        encoding="utf-8",
     )
-    assert points_for_event(event, store) == 0
-    assert any("Platinum" in r.message for r in caplog.records if r.levelname == "WARNING")
-
-
-def test_youtube_membership_per_event_tier_survives_normalize(tmp_path):
-    store = _rules_store(tmp_path)
-    saved = store.save_rules({
-        **store.rules,
-        EventType.YOUTUBE_MEMBERSHIP.value: {
-            "mode": "per_event_tier",
-            "tier_points": {"L1": 42},
-        },
-    })
-    assert saved[EventType.YOUTUBE_MEMBERSHIP.value]["mode"] == "per_event_tier"
-    assert saved[EventType.YOUTUBE_MEMBERSHIP.value]["tier_points"]["L1"] == 42
+    store = PointRulesStore(
+        point_rules_path=point_rules_path,
+        exchange_rates_path=tmp_path / "exchange_rates.json",
+    )
+    store.load()
+    rule = store.rules[EventType.YOUTUBE_MEMBERSHIP.value]
+    assert rule["mode"] == "per_event"
+    assert rule["points_per_event"] == 0
+    assert "tier_points" not in rule
 
 
 def test_unknown_currency_yields_zero_points(tmp_path, caplog):

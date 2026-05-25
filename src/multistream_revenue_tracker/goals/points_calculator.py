@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import math
 
-from ..revenue.events import EventType, Platform
 from .point_rules import PointRulesStore
 from ..revenue.revenue_db import StoredRevenueEvent
 from ..revenue.revenue_validity import effective_event_type_value, is_scoring_valid
@@ -58,9 +57,7 @@ def _round_points(value: float) -> int:
 
 
 def _tier_key_for_event(event: StoredRevenueEvent, rules_store: PointRulesStore) -> str:
-    if event.platform == Platform.YOUTUBE and rules_store.youtube_level_resolver is not None:
-        if event.event_type in (EventType.YOUTUBE_MEMBERSHIP, EventType.YOUTUBE_MEMBERSHIP_GIFT):
-            return rules_store.youtube_level_resolver(event.tier) or ""
+    del rules_store
     return _normalize_tier(event.tier)
 
 

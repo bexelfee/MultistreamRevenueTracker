@@ -36,18 +36,20 @@ A dashboard for tracking all subs/donations/memberships etc across twitch, youtu
 
 ## YouTube
 
-**Tracks:** Super Chats, Super Stickers, new memberships, membership gifts. 
+**Tracks:** Super Chats, Super Stickers, **new memberships**, **membership gifts**.
+
+> Memberships are tracked as a single flat per-event amount (one points value for "new member", one for "membership gift"). Per-level pricing isn't available: YouTube's membership-level API (`membershipsLevels.list`) is gated behind a manual Google access grant that this app does not currently hold, so we only see the generic "new sponsor" event from live chat.
 
 **Before you connect**
 
-- Start your youtube stream (you can try and connect beforehand but you will get an error).
-- For **per-level membership points** in the dashboard turn on **channel memberships** in [YouTube Studio](https://studio.youtube.com/) (Monetization → Memberships).
+- Start your YouTube stream (you can try connecting beforehand but you will get an error).
+- The Google account you sign in with must own the channel.
 
 **Connect**
 
 1. Under **Monitors**, click **Connect** next to YouTube.
-2. Sign in with the **Google account that owns the channel** and allow the requested access.
-3. After connect, membership **level names** can appear in point rules (up to six custom levels). If levels are missing, use **Disconnect**, then **Connect** again after memberships are enabled in Studio.
+2. Sign in with the **Google account that owns the channel** and allow the requested access (read-only YouTube data — used to read your live chat).
+3. When status shows **Active**, YouTube events are being monitored.
 
 ---
 
@@ -142,6 +144,17 @@ To update, download the latest executable from **GitHub Releases** and replace t
 
 - One monitor stopping does not stop the others. Use **Shutdown** when you want to exit the app completely.
 - Closing the tab will trigger shutdown to run in the background, you wont be able to reopen it without relaunching the application.
+
+---
+
+## Bring your own OAuth apps (advanced)
+
+By default the release build uses bundled developer credentials for Patreon and Google so you don't need to register anything. If you'd rather run against your own apps (to avoid sharing API quota or for additional security), open **Configuration → Advanced** and:
+
+- **Patreon:** paste your **Client ID** and **Client Secret** (register at [Patreon Clients](https://www.patreon.com/portal/registration/register-clients), redirect URI `http://localhost:8765/callback`).
+- **YouTube / Google:** paste the full **client_secret JSON** Google gives you (Application type: **Desktop app**, scope `.../auth/youtube.readonly`). Create one at [Google API Console → Credentials](https://console.cloud.google.com/apis/credentials).
+
+Empty fields fall back to the bundled defaults.
 
 ---
 

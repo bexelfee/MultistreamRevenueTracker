@@ -18,7 +18,6 @@ if TYPE_CHECKING:
     from ..monitors.monitor_coordinator import MonitorCoordinator
     from ..monitors.monitor_status import MonitorStatusRegistry
     from ..platforms.patreon_runtime import PatreonRuntime
-    from ..platforms.youtube_runtime import YoutubeRuntime
     from ..revenue.session_revenue import SessionRevenueStore
     from ..services.subathon_service import SubathonService
 
@@ -29,7 +28,6 @@ def create_app(
     event_queue: asyncio.Queue | None = None,
     allow_test_events: bool = False,
     patreon_runtime: PatreonRuntime | None = None,
-    youtube_runtime: YoutubeRuntime | None = None,
     monitor_registry: MonitorStatusRegistry | None = None,
     monitor_coordinator: MonitorCoordinator | None = None,
     shutdown_event: asyncio.Event | None = None,
@@ -57,7 +55,6 @@ def create_app(
     app.state.event_queue = event_queue
     app.state.allow_test_events = allow_test_events
     app.state.patreon_runtime = patreon_runtime
-    app.state.youtube_runtime = youtube_runtime
     app.state.monitor_registry = monitor_registry
     app.state.monitor_coordinator = monitor_coordinator
     app.state.shutdown_event = shutdown_event
@@ -98,7 +95,6 @@ def create_app(
         async def on_monitor_status_changed() -> None:
             await broadcaster.broadcast_state(
                 goal_service, patreon_runtime,
-                youtube_runtime=youtube_runtime,
                 monitor_registry=monitor_registry, session_revenue=session_revenue,
                 user_config=app.state.user_config, allow_test_events=app.state.allow_test_events,
                 supported_currencies=app.state.supported_currencies,

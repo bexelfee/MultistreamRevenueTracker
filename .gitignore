@@ -42,6 +42,5 @@ google_client_secret*.json
 .pytest_cache/
 
 # Local notes (not shipped)
-futuretodo.md
-release-todo.md
+todo.md
 .cursor/

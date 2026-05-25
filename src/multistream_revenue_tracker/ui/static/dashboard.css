@@ -183,6 +183,22 @@
       white-space: nowrap;
       user-select: none;
     }
+    .app-title {
+      flex: 1 1 auto;
+      min-width: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      padding: 0.25rem 0.25rem 0.25rem 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      user-select: none;
+    }
     .tab-nav .nav-actions .nav-action-btn,
     .tab-nav .nav-actions button.nav-action-btn {
       margin: 0;
@@ -362,6 +378,28 @@
       gap: 0.5rem;
     }
     .config-form .toggle-row input { margin: 0; flex-shrink: 0; }
+    .config-form details.config-advanced {
+      margin-top: 0.6rem;
+      padding: 0.4rem 0.6rem;
+      border: 1px solid var(--pico-muted-border-color, #ddd);
+      border-radius: 0.35rem;
+      background: rgba(0, 0, 0, 0.02);
+    }
+    .config-form details.config-advanced > summary {
+      cursor: pointer;
+      font-weight: 600;
+      padding: 0.15rem 0;
+    }
+    .config-form details.config-advanced[open] > summary {
+      margin-bottom: 0.4rem;
+    }
+    .config-form textarea#cfg-youtube-oauth-client-json {
+      width: 100%;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: 0.7rem;
+      line-height: 1.25;
+      resize: vertical;
+    }
     .monitors-twitch-section {
       border-top: 1px solid var(--pico-muted-border-color, #ddd);
       padding-top: 0.35rem;
@@ -480,7 +518,7 @@
     .status-active { color: #0a7a2f; background: #e8f5ec; }
     .status-error { color: #b00020; background: #fde8eb; }
     .monitor-detail { font-size: 0.65rem; flex-basis: 100%; text-align: right; }
-    .tab-nav .nav-actions { margin-left: auto; display: flex; gap: 0.35rem; align-items: center; }
+    .tab-nav .nav-actions { margin-left: auto; flex: 1 1 auto; display: flex; gap: 0.35rem; align-items: center; min-width: 0; }
     .shutdown-btn {
       background: #b00020;
       border-color: #8a0018;

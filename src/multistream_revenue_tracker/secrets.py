@@ -59,11 +59,26 @@ def resolve_streamlabs_socket_token(raw_config: dict[str, Any]) -> str:
     return token
 
 
-def resolve_youtube_oauth_client_config() -> dict[str, Any] | None:
+def resolve_youtube_oauth_client_config(
+    raw_config: dict[str, Any] | None = None,
+) -> dict[str, Any] | None:
     """
-    Google OAuth client config (release bundle, YOUTUBE_OAUTH_CLIENT_JSON, or
-    JSON file at YOUTUBE_CLIENT_SECRETS_PATH).
+    Google OAuth client config. Priority order (first hit wins):
+      1. ``youtube.oauth_client_json`` in config.json (custom client pasted in
+         the dashboard's Advanced section).
+      2. Release bundle (``bundled_credentials.YOUTUBE_OAUTH_CLIENT_CONFIG``).
+      3. ``YOUTUBE_OAUTH_CLIENT_JSON`` environment variable (inline JSON).
+      4. ``YOUTUBE_CLIENT_SECRETS_PATH`` environment variable (path to JSON).
     """
+    if raw_config:
+        yt = raw_config.get("youtube")
+        if isinstance(yt, dict):
+            cfg_json = str(yt.get("oauth_client_json") or "").strip()
+            if cfg_json:
+                data = json.loads(cfg_json)
+                if isinstance(data, dict) and data:
+                    return data
+
     cfg = bundled_credentials.YOUTUBE_OAUTH_CLIENT_CONFIG
     if isinstance(cfg, dict) and cfg:
         return cfg

@@ -30,7 +30,6 @@ from ..platforms.patreon_client import (
 )
 from ..log_scrubbing import register_from_app_config
 from ..platforms.patreon_runtime import PatreonRuntime
-from ..platforms.youtube_runtime import YoutubeRuntime
 
 LOGGER = logging.getLogger(__name__)
 
@@ -45,7 +44,6 @@ class SessionHandles:
     registry: MonitorStatusRegistry
     coordinator: MonitorCoordinator
     patreon_runtime: PatreonRuntime
-    youtube_runtime: YoutubeRuntime
     _connect_patreon: PatreonConnectHandler | None = field(default=None, repr=False)
     _connect_youtube: YoutubeConnectHandler | None = field(default=None, repr=False)
 
@@ -56,9 +54,6 @@ class SessionHandles:
     def set_connect_youtube(self, handler: YoutubeConnectHandler | None) -> None:
         self._connect_youtube = handler
         self.coordinator.set_youtube_connect(handler)
-
-    def attach_youtube_level_resolver(self, goal_service) -> None:
-        goal_service.rules_store.youtube_level_resolver = self.youtube_runtime.resolve_level_id
 
     async def reload_after_config_save(self) -> AppConfig:
         """Apply saved config.json to coordinator and registry."""
@@ -174,19 +169,15 @@ class SessionHandles:
         return connect_patreon
 
     def _build_connect_youtube(self, app_cfg: AppConfig) -> YoutubeConnectHandler:
-        runtime = self.youtube_runtime
-
         async def connect_youtube() -> str | None:
-            runtime.load_error = None
             try:
-                credentials = await asyncio.to_thread(
+                await asyncio.to_thread(
                     youtube_monitor.load_youtube_credentials,
                     app_cfg.youtube,
                     None,
                     None,
                     None,
                 )
-                await asyncio.to_thread(runtime.load_levels, credentials)
             except MonitorAuthCancelled:
                 LOGGER.info("YouTube connect cancelled")
                 return YOUTUBE_CONNECT_CANCELLED

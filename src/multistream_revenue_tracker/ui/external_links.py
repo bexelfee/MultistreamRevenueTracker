@@ -11,6 +11,7 @@ STREAMLABS_API_SETTINGS_HREF = "https://streamlabs.com/dashboard#/settings/api-s
 PATREON_CLIENT_REGISTER_HREF = (
     "https://www.patreon.com/portal/registration/register-clients"
 )
+GOOGLE_OAUTH_CLIENT_REGISTER_HREF = "https://console.cloud.google.com/apis/credentials"
 # Pin to a specific Pico CSS minor version (rather than `@2`) so a published
 # upstream change cannot silently re-style the dashboard between two of our
 # releases. Bump deliberately when we want to pick up new styles.
@@ -21,6 +22,7 @@ GITHUB_ISSUES_HREF = "https://github.com/bexelfee/MultistreamRevenueTracker/issu
 UI_EXTERNAL_LINK_TEMPLATE_VARS = {
     "streamlabs_api_settings_href": STREAMLABS_API_SETTINGS_HREF,
     "patreon_client_register_href": PATREON_CLIENT_REGISTER_HREF,
+    "google_oauth_client_register_href": GOOGLE_OAUTH_CLIENT_REGISTER_HREF,
     "pico_css_href": PICO_CSS_HREF,
     "github_issues_href": GITHUB_ISSUES_HREF,
     "app_version": __version__,
@@ -38,5 +40,6 @@ def external_link_check_targets() -> list[tuple[str, str]]:
     return [
         ("streamlabs_api_settings", request_url_for_href(STREAMLABS_API_SETTINGS_HREF)),
         ("patreon_client_register", PATREON_CLIENT_REGISTER_HREF),
+        ("google_oauth_client_register", GOOGLE_OAUTH_CLIENT_REGISTER_HREF),
         ("pico_css_cdn", PICO_CSS_HREF),
     ]
