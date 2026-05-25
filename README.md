@@ -178,6 +178,6 @@ OAuth redirect URIs for your developer apps: Twitch `http://localhost:17563`, Pa
 
 ---
 
-You can view the privacy policy here: https://multistreamrevenuetracker.jimbexleyspeed.co.uk/PRIVACY.html
+You can view the privacy policy here: [https://multistreamrevenuetracker.jimbexleyspeed.co.uk/PRIVACY.html](https://multistreamrevenuetracker.jimbexleyspeed.co.uk/PRIVACY.html)
 
-You can view the terms of service here: https://multistreamrevenuetracker.jimbexleyspeed.co.uk/TERMS.html
+You can view the terms of service here: [https://multistreamrevenuetracker.jimbexleyspeed.co.uk/TERMS.html](https://multistreamrevenuetracker.jimbexleyspeed.co.uk/TERMS.html)
