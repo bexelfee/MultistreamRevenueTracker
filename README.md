@@ -2,8 +2,6 @@
 
 A dashboard for tracking all subs/donations/memberships etc across twitch, youtube, patreon, and streamlabs in one place. Assign point values to each type of contribution so that you can have cross-platform community driven goals! Includes progress bar and subathon overlays.
 
-**Legal:** [Privacy Policy](PRIVACY.html) · [Terms of Service](TERMS.html)
-
 ---
 
 ## Quick start
@@ -177,3 +175,9 @@ pip install -r requirements-build.txt
 Output: `dist/MultistreamRevenueTracker/` — ship the whole folder. PyInstaller spec: `scripts/multistream_revenue_tracker.spec`. Windows exe icon: `res/app.ico` (browser favicon: `src/multistream_revenue_tracker/ui/static/icon.png`).
 
 OAuth redirect URIs for your developer apps: Twitch `http://localhost:17563`, Patreon `http://localhost:8765/callback`, YouTube desktop client (dynamic localhost).
+
+---
+
+You can view the privacy policy here: https://multistreamrevenuetracker.jimbexleyspeed.co.uk/PRIVACY.html
+
+You can view the terms of service here: https://multistreamrevenuetracker.jimbexleyspeed.co.uk/TERMS.html
