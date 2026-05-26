@@ -10,6 +10,16 @@ A dashboard for tracking all subs/donations/memberships etc across twitch, youtu
 
 ---
 
+## Quick Note
+This app is currently undergoing google verification, which can take four to six weeks. As such youtube monitoring will not work for now. If you contact me directly and provide your email address I can add you as a test user in the meantime - if not then watch this space for updates. 
+
+---
+
+## Support 
+If this is useful please consider giving me a job :) Or if you can't, I'd really appreciate [a coffee](https://ko-fi.com/jimbexleyspeed)
+
+---
+
 ## Quick start
 
 1. **Run the app**, a browser tab will open automatically.
