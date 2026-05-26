@@ -1,5 +1,9 @@
 # Multistream Revenue Tracker
 
+![Dashboard screenshot](res/Dashboard.png)
+
+![Progress bar overlay](res/ProgressBarGif.gif)
+
 A dashboard for tracking all subs/donations/memberships etc across twitch, youtube, patreon, and streamlabs in one place. Assign point values to each type of contribution so that you can have cross-platform community driven goals! Includes progress bar and subathon overlays.
 
 **Legal:** [Privacy Policy](https://multistreamrevenuetracker.jimbexleyspeed.co.uk/PRIVACY.html) · [Terms of Service](https://multistreamrevenuetracker.jimbexleyspeed.co.uk/TERMS.html)
