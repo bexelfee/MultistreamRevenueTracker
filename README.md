@@ -52,7 +52,6 @@ If this is useful please consider giving me a job :) Or if you can't, I'd really
 
 **Tracks:** Super Chats, Super Stickers, **new memberships**, **membership gifts**.
 
-> Memberships are tracked as a single flat per-event amount (one points value for "new member", one for "membership gift"). Per-level pricing isn't available: YouTube's membership-level API (`membershipsLevels.list`) is gated behind a manual Google access grant that this app does not currently hold, so we only see the generic "new sponsor" event from live chat.
 
 **Before you connect**
 
